@@ -1,112 +1,61 @@
-import css from "../App/App.module.css";
-import { SearchBar } from "../SearchBar/SearchBar";
-import { ImageGallery } from "../ImageGallery/ImageGallery";
-import { ImageModal } from "../ImageModal/ImageModal";
-import { Loader } from "../Loader/Loader";
-import { LoadMoreButton } from "../LoadMoreButton/LoadMoreButton";
-import { fetchImages } from "../images-api";
-import { ErrorMessage } from "../ErrorMessage/ErrorMessage";
-import customStyles from "../custom-styles";
-import Modal from "react-modal";
+import "./App.css";
+import { ContactList } from "../ContactList/ContactList";
+import { SearchBox } from "../SearchBox/SearchBox";
+import { ContactForm } from "../ContactForm/ContactForm";
 import { useState, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+import { nanoid } from "nanoid";
 
 function App() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [modalIsOpen, setIsOpen] = useState(false);
-  const [images, setImages] = useState([]);
-  const [page, setPage] = useState(1);
-  const [imageForModal, setImageForModal] = useState("");
-  const [valueToSearch, setValueToSearch] = useState("");
-  const [firstRender, setFirstRender] = useState(true);
-  const [totalPages, setTotalPages] = useState(0);
-
-  useEffect(() => {
-    if (firstRender) {
-      setFirstRender(false);
-      return;
+  const [contacts, setContacts] = useState(() => {
+    const savesContacts = localStorage.getItem("savesContacts");
+    if (savesContacts !== null) {
+      return JSON.parse(savesContacts);
     }
+    return [
+      { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
+      { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
+      { id: "id-3", name: "Eden Clements", number: "645-17-79" },
+      { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
+    ];
+  });
 
-    async function handleSearch(value) {
-      try {
-        setError(false);
-        setLoading(true);
-        const data = await fetchImages(value, page);
+  const [inputValue, setInputValue] = useState("");
 
-        if (page === 1 && data.results.length > 0) {
-          toast(`Congratulations! We found ${data.total} pictures`);
-        }
-        if (data.results.length === 0) {
-          toast(`No pictures found`);
-        }
-        if (page === data.total_pages) {
-          toast(`You have reached the end of the collection`);
-        }
+  useEffect(
+    () => localStorage.setItem("savesContacts", JSON.stringify(contacts)),
+    [contacts]
+  );
 
-        setTotalPages(data.total_pages);
-        setImages([...images, ...data.results]);
-        setLoading(false);
-      } catch {
-        console.log(error);
-        setError(true);
-        setLoading(false);
-      }
-    }
-
-    handleSearch(valueToSearch);
-  }, [page, valueToSearch]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [valueToSearch]);
-
-  function toggleModal() {
-    setIsOpen(!modalIsOpen);
-    document.body.style.overflow = modalIsOpen ? "auto" : "hidden";
-  }
-
-  const getImageForModal = (img) => {
-    setImageForModal(img);
+  const addNewContact = (dates) => {
+    const newContact = {
+      ...dates,
+      id: nanoid(),
+    };
+    setContacts([...contacts, newContact]);
   };
 
-  const onSearchButton = (value) => {
-    if (value.trim() === "") {
-      return toast("Value cannot be empty");
-    }
-    setValueToSearch(value);
-    setImages([]);
+  const handleInputChange = (ev) => {
+    setInputValue(ev.target.value);
+  };
+
+  const visibleContacts = () => {
+    const inputValueInLowerCase = inputValue.toLowerCase();
+    return contacts.filter((contact) =>
+      contact.name.toLowerCase().includes(inputValueInLowerCase)
+    );
+  };
+
+  const deleteContact = (name) => {
+    const updateContacts = contacts.filter((contact) => contact.name !== name);
+    setContacts(updateContacts);
   };
 
   return (
     <>
-      <ToastContainer />
-      <SearchBar onSearch={onSearchButton} />
-
-      {error && <ErrorMessage />}
-      {images.length > 0 && !error && (
-        <section className={css.section}>
-          <ImageGallery
-            dates={images}
-            toggleModal={toggleModal}
-            getImageForModal={getImageForModal}
-          />
-        </section>
-      )}
-      {loading && <Loader />}
-      {images.length > 0 && page !== totalPages && (
-        <LoadMoreButton onLoadMoreClick={() => setPage(page + 1)} />
-      )}
-      <Modal
-        isOpen={modalIsOpen}
-        ariaHideApp={false}
-        style={customStyles}
-        onRequestClose={toggleModal}
-        shouldCloseOnOverlayClick={true}
-      >
-        <ImageModal toggleModal={toggleModal} imageForModal={imageForModal} />
-      </Modal>
+      <ContactForm addNewContact={addNewContact} />
+      <SearchBox value={inputValue} handleInputChange={handleInputChange} />
+      <ContactList contacts={visibleContacts()} deleteContact={deleteContact} />
     </>
   );
 }
