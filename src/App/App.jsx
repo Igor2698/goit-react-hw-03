@@ -35,11 +35,13 @@ function App() {
         setLoading(true);
         const data = await fetchImages(value, page);
 
-        if (page === 1) {
+        if (page === 1 && data.results.length > 0) {
           toast(`Congratulations! We found ${data.total} pictures`);
-        } else if (data.results.length < 0) {
+        }
+        if (data.results.length === 0) {
           toast(`No pictures found`);
-        } else if (page === data.total_pages) {
+        }
+        if (page === data.total_pages) {
           toast(`You have reached the end of the collection`);
         }
 
