@@ -46,8 +46,8 @@ function App() {
     );
   };
 
-  const deleteContact = (name) => {
-    const updateContacts = contacts.filter((contact) => contact.name !== name);
+  const deleteContact = (id) => {
+    const updateContacts = contacts.filter((contact) => contact.id !== id);
     setContacts(updateContacts);
   };
 
